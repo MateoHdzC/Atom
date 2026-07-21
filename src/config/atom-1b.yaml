@@ -1,0 +1,31 @@
+# ATOM Training Configuration
+# Version: 1B (proof of concept)
+
+model:
+  name: "atom-1b"
+  architecture: "gpt2"  # Start with GPT-2 architecture, customize later
+  vocab_size: 50257
+  n_positions: 1024
+  n_embd: 768
+  n_layer: 12
+  n_head: 12
+
+training:
+  output_dir: "./models/atom-1b"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 5.0e-5
+  warmup_steps: 100
+  logging_steps: 10
+  save_steps: 500
+  fp16: true  # Use mixed precision for faster training
+  
+data:
+  train_file: "./data/processed/train.txt"
+  validation_file: "./data/processed/val.txt"
+  block_size: 1024
+
+tokenizer:
+  name: "gpt2"  # Start with GPT-2 tokenizer, create custom later
+  vocab_size: 50257

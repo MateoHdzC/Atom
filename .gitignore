@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Modelos (pesados, se copian después)
+models/
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# Datos de entrenamiento (grandes)
+data/processed/
+data/raw/
+*.jsonl
+*.json
+*.csv
+*.parquet
+
+# Cache
+.cache/
+*.cache
+.huggingface/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Entrenamiento
+logs/
+checkpoints/
+wandb/

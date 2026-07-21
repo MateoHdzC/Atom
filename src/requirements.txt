@@ -1,0 +1,24 @@
+# ATOM - Dependencies
+# Python 3.13+
+
+# Core ML
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=2.14.0
+accelerate>=0.21.0
+tokenizers>=0.13.0
+
+# Training
+trl>=0.7.0
+peft>=0.5.0
+
+# CLI
+click>=8.0.0
+rich>=13.0.0
+
+# Config
+pyyaml>=6.0
+
+# Utils
+tqdm>=4.65.0
+numpy>=1.24.0
