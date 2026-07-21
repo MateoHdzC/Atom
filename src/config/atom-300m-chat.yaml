@@ -1,0 +1,38 @@
+# ATOM Training Configuration
+# Version: 300M (Chat model)
+
+model:
+  name: "atom-300m-chat"
+  architecture: "gpt2"
+  vocab_size: 50257
+  n_positions: 1024
+  n_embd: 1024
+  n_layer: 24
+  n_head: 16
+  # ~345M parameters (GPT-2 Medium)
+
+training:
+  output_dir: "./models/atom-300m-chat"
+  num_train_epochs: 5
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 3.0e-5
+  warmup_steps: 500
+  logging_steps: 50
+  save_steps: 1000
+  fp16: false  # CPU training, no fp16
+  max_steps: -1  # Train for full epochs
+  
+data:
+  train_file: "./data/processed/chat_train.txt"
+  validation_file: "./data/processed/chat_val.txt"
+  block_size: 512  # Reduced for CPU memory
+
+tokenizer:
+  name: "gpt2"
+  vocab_size: 50257
+
+# Estimated training time on CPU (8GB RAM):
+# - 50 examples: ~30 minutes
+# - 500 examples: ~3-4 hours
+# - 1000 examples: ~8-12 hours

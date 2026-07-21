@@ -4,6 +4,7 @@ Complete pipeline: Generate data with teacher → Train ATOM
 
 Usage:
     python pipeline.py --teacher chat --num-examples 100 --epochs 3
+    python pipeline.py --teacher chat --num-examples 500 --epochs 5 --model-size 300m
     python pipeline.py --teacher all --num-examples 300 --epochs 5
 """
 
@@ -14,6 +15,12 @@ from pathlib import Path
 from rich.console import Console
 
 console = Console()
+
+# Model configurations
+MODEL_CONFIGS = {
+    "124m": "config/atom-1b.yaml",
+    "300m": "config/atom-300m-chat.yaml",
+}
 
 def run_command(command: str, description: str) -> bool:
     """Run a shell command and return success status."""
@@ -51,6 +58,9 @@ def main():
                        help="Number of training epochs")
     parser.add_argument("--batch-size", type=int, default=2,
                        help="Batch size for training")
+    parser.add_argument("--model-size", type=str, default="124m",
+                       choices=["124m", "300m"],
+                       help="Model size to train")
     parser.add_argument("--skip-generation", action="store_true",
                        help="Skip data generation, use existing data")
     
@@ -58,9 +68,18 @@ def main():
     
     console.print("\n[bold blue]=== ATOM Training Pipeline ===[/bold blue]\n")
     console.print(f"[cyan]Teacher:[/cyan] {args.teacher}")
+    console.print(f"[cyan]Model size:[/cyan] {args.model_size}")
     console.print(f"[cyan]Examples:[/cyan] {args.num_examples}")
     console.print(f"[cyan]Epochs:[/cyan] {args.epochs}")
     console.print(f"[cyan]Batch size:[/cyan] {args.batch_size}")
+    
+    # Get config file for model size
+    config_file = MODEL_CONFIGS.get(args.model_size)
+    if not config_file:
+        console.print(f"[red]Unknown model size: {args.model_size}[/red]")
+        return
+    
+    console.print(f"[cyan]Config:[/cyan] {config_file}")
     
     # Step 1: Generate data with teacher
     if not args.skip_generation:
@@ -90,9 +109,9 @@ def main():
         console.print("[yellow]Run without --skip-generation first[/yellow]")
         return
     
-    train_cmd = f"python scripts/train.py --epochs {args.epochs} --batch-size {args.batch_size}"
+    train_cmd = f"python scripts/train.py --config {config_file} --epochs {args.epochs} --batch-size {args.batch_size}"
     
-    if not run_command(train_cmd, "Training ATOM model"):
+    if not run_command(train_cmd, f"Training ATOM {args.model_size} model"):
         console.print("[red]Training failed.[/red]")
         return
     
