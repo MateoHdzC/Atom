@@ -58,7 +58,7 @@ def test_model(model_path: str = "./models/atom-1b"):
         try:
             result = generator(
                 prompt,
-                max_length=50,
+                max_new_tokens=30,
                 num_return_sequences=1,
                 temperature=0.7,
                 do_sample=True,
@@ -110,7 +110,7 @@ def chat_mode(model_path: str = "./models/atom-1b"):
             # Generate response
             result = generator(
                 user_input,
-                max_length=100,
+                max_new_tokens=30,
                 num_return_sequences=1,
                 temperature=0.7,
                 do_sample=True,
