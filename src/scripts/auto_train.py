@@ -4,7 +4,7 @@ Automated pipeline: Generate data → Train → Repeat
 
 Usage:
     python auto_train.py --rounds 5 --examples-per-round 50
-    python auto_train.py --rounds 15 --examples-per-round 50 --dashboard
+    python auto_train.py --rounds 15 --examples-per-round 50 --dashboard --port 5000
 """
 
 import os
@@ -18,34 +18,8 @@ from rich.console import Console
 
 console = Console()
 
-# Dashboard status (shared with dashboard.py)
-dashboard_status = {
-    "running": False,
-    "current_round": 0,
-    "total_rounds": 0,
-    "examples_per_round": 0,
-    "total_examples": 0,
-    "current_step": "",
-    "progress": 0,
-    "loss": 0,
-    "start_time": None,
-    "logs": []
-}
-
-def update_dashboard(key, value):
-    """Update dashboard status."""
-    dashboard_status[key] = value
-    if key == "current_round" and dashboard_status["total_rounds"] > 0:
-        dashboard_status["progress"] = int((value / dashboard_status["total_rounds"]) * 100)
-
-def add_log(message):
-    """Add a log entry."""
-    dashboard_status["logs"].append({
-        "time": datetime.now().strftime("%H:%M:%S"),
-        "message": message
-    })
-    if len(dashboard_status["logs"]) > 100:
-        dashboard_status["logs"] = dashboard_status["logs"][-100:]
+# Import shared status
+from training_status import update_status, add_log, get_status
 
 def run_cmd(cmd: str, desc: str) -> bool:
     """Run command and return success."""
@@ -81,7 +55,7 @@ def start_ollama():
 
 def generate_data(num_examples: int) -> bool:
     """Generate training data with teacher."""
-    update_dashboard("current_step", "Generating data")
+    update_status({"current_step": "Generating data"})
     add_log(f"Generating {num_examples} examples")
     
     start_ollama()
@@ -95,7 +69,7 @@ def generate_data(num_examples: int) -> bool:
 
 def train_model() -> bool:
     """Train the model."""
-    update_dashboard("current_step", "Training model")
+    update_status({"current_step": "Training model"})
     add_log("Training 200M model")
     
     cmd = "python scripts/train_200m.py"
@@ -103,7 +77,7 @@ def train_model() -> bool:
 
 def test_model():
     """Quick test of the model."""
-    update_dashboard("current_step", "Testing model")
+    update_status({"current_step": "Testing model"})
     add_log("Testing model")
     
     cmd = "python scripts/test_model.py --model ./models/atom-simple"
@@ -112,11 +86,8 @@ def test_model():
 def start_dashboard(port=5000):
     """Start dashboard in a separate thread."""
     try:
-        from dashboard import app, status
-        # Share status with dashboard
-        status.update(dashboard_status)
-        
         def run():
+            from dashboard import app
             app.run(host='0.0.0.0', port=port, debug=False)
         
         thread = threading.Thread(target=run, daemon=True)
@@ -141,12 +112,18 @@ def main():
     
     args = parser.parse_args()
     
-    # Update dashboard status
-    update_dashboard("running", True)
-    update_dashboard("total_rounds", args.rounds)
-    update_dashboard("examples_per_round", args.examples_per_round)
-    update_dashboard("total_examples", args.rounds * args.examples_per_round)
-    update_dashboard("start_time", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    # Update shared status
+    update_status({
+        "running": True,
+        "total_rounds": args.rounds,
+        "examples_per_round": args.examples_per_round,
+        "total_examples": args.rounds * args.examples_per_round,
+        "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "current_round": 0,
+        "current_step": "Starting",
+        "progress": 0,
+        "loss": 0
+    })
     
     console.print("\n[bold blue]=== ATOM Auto-Trainer ===[/bold blue]\n")
     console.print(f"[cyan]Rounds:[/cyan] {args.rounds}")
@@ -161,7 +138,7 @@ def main():
     
     for round_num in range(1, args.rounds + 1):
         console.print(f"\n[bold yellow]=== Round {round_num}/{args.rounds} ===[/bold yellow]")
-        update_dashboard("current_round", round_num)
+        update_status({"current_round": round_num})
         add_log(f"Starting round {round_num}/{args.rounds}")
         
         # Step 1: Generate data
@@ -190,8 +167,10 @@ def main():
         checkpoint_dir = f"./models/atom-simple-round-{round_num}"
         run_cmd(f"cp -r ./models/atom-simple {checkpoint_dir}", f"Saving checkpoint to {checkpoint_dir}")
     
-    update_dashboard("running", False)
-    update_dashboard("current_step", "Complete")
+    update_status({
+        "running": False,
+        "current_step": "Complete"
+    })
     add_log("Auto-training complete!")
     
     console.print("\n[bold green]=== Auto-Training complete! ===[/bold green]")

@@ -9,7 +9,6 @@ Usage:
 import os
 import json
 import time
-import threading
 from datetime import datetime
 from flask import Flask, render_template_string
 from rich.console import Console
@@ -17,19 +16,25 @@ from rich.console import Console
 console = Console()
 app = Flask(__name__)
 
-# Training status
-status = {
-    "running": False,
-    "current_round": 0,
-    "total_rounds": 0,
-    "examples_per_round": 0,
-    "total_examples": 0,
-    "current_step": "",
-    "progress": 0,
-    "loss": 0,
-    "start_time": None,
-    "logs": []
-}
+STATUS_FILE = "./data/training_status.json"
+
+def get_status():
+    """Get current training status from shared file."""
+    if os.path.exists(STATUS_FILE):
+        with open(STATUS_FILE, 'r') as f:
+            return json.load(f)
+    return {
+        "running": False,
+        "current_round": 0,
+        "total_rounds": 0,
+        "examples_per_round": 0,
+        "total_examples": 0,
+        "current_step": "",
+        "progress": 0,
+        "loss": 0,
+        "start_time": None,
+        "logs": []
+    }
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -215,23 +220,8 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def dashboard():
+    status = get_status()
     return render_template_string(HTML_TEMPLATE, status=status)
-
-def update_status(key, value):
-    """Update training status."""
-    status[key] = value
-    if key == "current_round" and status["total_rounds"] > 0:
-        status["progress"] = int((value / status["total_rounds"]) * 100)
-
-def add_log(message):
-    """Add a log entry."""
-    status["logs"].append({
-        "time": datetime.now().strftime("%H:%M:%S"),
-        "message": message
-    })
-    # Keep only last 100 logs
-    if len(status["logs"]) > 100:
-        status["logs"] = status["logs"][-100:]
 
 def run_dashboard(port=5000):
     """Run the dashboard server."""
